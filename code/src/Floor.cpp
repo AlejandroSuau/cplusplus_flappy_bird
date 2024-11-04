@@ -22,7 +22,7 @@ Floor::Floor(TextureManager& texture_manager)
 }
 
 void Floor::LoadTextures() {
-    texture_ = texture_manager_.LoadTexture(kAssetsFolder + "base.png");
+    texture_ = texture_manager_.LoadTexture(kAssetsFolderImages + "base.png");
 }
 
 bool Floor::IsCollidingWith(const SDL_FRect& other) const {

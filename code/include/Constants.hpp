@@ -6,15 +6,22 @@
 
 #include <string>
 
+// Update
+static const Uint64 kTargetFPS = 60;
+static const Uint64 kFixedTimeStep = 1000 / kTargetFPS;
+static const Uint64 kFrameDelay = 1000 / kTargetFPS; // Frame delay in milliseconds
+
 // Game
-static const std::string kAssetsFolder = "assets/";
+static const std::string kAssetsFolderImages = "assets/images/";
+static const std::string kAssetsFolderSounds = "assets/sounds/";
+
 static const int kGameWidth = 336;
 static const int kGameHeight = 480;
 static const float kScrollingVelocityX = 100.f;
 static const Uint64 kMillisecondsToSpawnPipe = 1500;
 static const SDL_FRect kTextureRectBackground {0.f, 0.f, kGameWidth, kGameHeight};
 static const SDL_FRect kTextureRectTutorial {75.f, 10.f, 185.f, 267.f};
-static const SDL_FRect kTextureRectGameOver {75.f, 100.f, 192.f, 42.f};
+static const SDL_FRect kTextureRectGameOver {85.f, 100.f, 192.f, 42.f};
 
 // Floor
 static const float kFloorHeight = 112.f;

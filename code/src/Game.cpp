@@ -10,6 +10,7 @@ Game::Game()
     : sdl_(std::make_unique<SDLInitializer>())
     , sdl_image_(std::make_unique<SDLImageInitializer>())
     , sdl_ttf_(std::make_unique<SDLTTFInitializer>())
+    , sdl_mixer_(std::make_unique<SDLMixerInitializer>())
     , window_(
         SDL_CreateWindow(
             "Flappy Bird",
@@ -24,13 +25,12 @@ Game::Game()
         SDL_DestroyRenderer)
     , is_running_(false)
     , texture_manager_(*renderer_.get())
+    , score_manager_(texture_manager_)
+    , ui_manager_(texture_manager_, score_manager_)
     , state_(EGameState::READY_TO_PLAY)
     , background_texture_(nullptr)
-    , tutorial_texture_(nullptr)
-    , gameover_texture_(nullptr)
-    , bird_(texture_manager_)
+    , bird_(sounds_manager_, texture_manager_)
     , floor_(texture_manager_)
-    , score_manager_(texture_manager_)
     , pipes_spawn_timer_(kMillisecondsToSpawnPipe)
     , pipes_pairs_factory_(texture_manager_) {
 
@@ -42,15 +42,11 @@ Game::Game()
     SDL_SetRenderDrawBlendMode(renderer_.get(), SDL_BLENDMODE_BLEND);
 }
 
-Game::~Game() {}
-
 void Game::Run() {
+    Init();
+    
     is_running_ = true;
     SDL_ShowWindow(window_.get());
-
-    // Game Start
-    Init();
-    // END Game Start
 
     Uint64 previous_time = SDL_GetTicks64();
     Uint64 accumulated_time = 0;
@@ -63,30 +59,24 @@ void Game::Run() {
         HandleEvents();
 
         // Fixed Update Loop
-        while (accumulated_time >= fixed_timestep) {
-            Update(fixed_timestep / 1000.0f); // Pass in seconds as a float
-            accumulated_time -= fixed_timestep;
+        while (accumulated_time >= kFixedTimeStep) {
+            Update(kFixedTimeStep / 1000.0f); // Pass in seconds as a float
+            accumulated_time -= kFixedTimeStep;
         }
 
         Render();
 
         Uint64 frame_end = SDL_GetTicks64();
         Uint64 frame_duration = frame_end - current_time;
-        if (frame_duration < frame_delay) {
-            SDL_Delay(static_cast<Uint32>(frame_delay - frame_duration));
+        if (frame_duration < kFrameDelay) {
+            SDL_Delay(static_cast<Uint32>(kFrameDelay - frame_duration));
         }
     }
 }
 
 void Game::Init() {
-    LoadTextures();
     bird_.Init();
-}
-
-void Game::LoadTextures() {
-    background_texture_ = texture_manager_.LoadTexture(kAssetsFolder + "background-night.png");
-    tutorial_texture_ = texture_manager_.LoadTexture(kAssetsFolder + "message.png");
-    gameover_texture_ = texture_manager_.LoadTexture(kAssetsFolder + "gameover.png");
+    background_texture_ = texture_manager_.LoadTexture(kAssetsFolderImages + "background-night.png");
 }
 
 void Game::Update(float dt) {
@@ -98,9 +88,7 @@ void Game::Update(float dt) {
     ProcessPipeCollisions();
     ProcessFloorCollisions();
 
-    // If floor.Stop()?
-    bool should_move_floor = (state_ == EGameState::READY_TO_PLAY || state_ == EGameState::PLAYING);
-    if (should_move_floor) {
+    if (IsReadyToPlay() || IsPlaying()) {
         floor_.Update(dt);
     }
 
@@ -128,12 +116,15 @@ void Game::ProcessCheckPointCollisions() {
         return pipes_pair->IsRectCollidingWithScoreCheck(bird_.GetHitBox());
     };
     for (auto& pipes : pipes_pairs_ | std::views::filter(bird_collides_with_checkpoint)) {
+        bird_.ProcessCollisionWithScoreCheck();
         pipes->RemoveCheckPoint();
         score_manager_.IncreaseScoreOneUnit();
     }
 }
 
 void Game::ProcessPipeCollisions() {
+    if (IsFinishing()) return;
+
     auto bird_collides_with_pipe = [&](const auto& pipes_pair) {
         return pipes_pair->IsRectCollidingWithPipe(bird_.GetHitBox());
     };
@@ -171,19 +162,11 @@ void Game::Render() {
     for (auto& pipe_pair : pipes_pairs_) {
         pipe_pair->Render(*renderer);
     }
-
-    if (state_ == EGameState::READY_TO_PLAY) {
-        SDL_RenderCopyF(renderer, tutorial_texture_, nullptr, &kTextureRectTutorial);
-    } else {
-        score_manager_.Render(*renderer);   
-    }
     
     floor_.Render(*renderer);
     bird_.Render(*renderer);
 
-    if (state_ == EGameState::FINISHED) {
-        SDL_RenderCopyF(renderer, gameover_texture_, nullptr, &kTextureRectGameOver);
-    }
+    ui_manager_.Render(*renderer, *this);
 
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
     SDL_RenderPresent(renderer);
@@ -202,6 +185,22 @@ void Game::HandleEvents() {
             HandlePressedKeySpace();
         }
     }
+}
+
+bool Game::IsReadyToPlay() const {
+    return (state_ == EGameState::READY_TO_PLAY);
+}
+
+bool Game::IsPlaying() const {
+    return (state_ == EGameState::PLAYING);
+}
+
+bool Game::IsFinishing() const {
+    return (state_ == EGameState::FINISHING);
+}
+
+bool Game::IsFinished() const {
+    return (state_ == EGameState::FINISHED);
 }
 
 void Game::HandlePressedKeySpace() {

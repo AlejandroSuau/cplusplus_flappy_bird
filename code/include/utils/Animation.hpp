@@ -47,7 +47,7 @@ public:
 
     void LoadTextures() {
         for (std::size_t i = 0; i < TexturesCount; ++i) {
-            std::string full_path = kAssetsFolder + Paths[i];
+            std::string full_path = kAssetsFolderImages + Paths[i];
             textures_[i] = texture_manager_.LoadTexture(full_path);
             // SDL_Log("Animation: Loading texture: %s", full_path.c_str());
         }

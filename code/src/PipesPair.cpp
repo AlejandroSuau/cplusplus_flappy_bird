@@ -20,7 +20,7 @@ PipesPair::PipesPair(TextureManager& texture_manager, float x, float height_top,
 }
 
 void PipesPair::LoadTextures() {
-    pipe_texture_ = texture_manager_.LoadTexture(kAssetsFolder + "pipe-green.png");
+    pipe_texture_ = texture_manager_.LoadTexture(kAssetsFolderImages + "pipe-green.png");
 }
 
 bool PipesPair::IsRectCollidingWithPipe(const SDL_FRect& rect) const {

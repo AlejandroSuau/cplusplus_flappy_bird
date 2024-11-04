@@ -23,7 +23,7 @@ void ScoreManager::IncreaseScoreOneUnit() {
 
 void ScoreManager::LoadNumberTextures() {
     for (std::size_t i = 0; i < number_textures_.size(); ++i) {
-        number_textures_[i] = texture_manager_.LoadTexture(kAssetsFolder + std::to_string(i) + ".png");
+        number_textures_[i] = texture_manager_.LoadTexture(kAssetsFolderImages + std::to_string(i) + ".png");
     }
 }
 
