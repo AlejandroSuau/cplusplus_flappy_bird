@@ -1,7 +1,5 @@
 # Flappy Bird - C++ and SDL
 
-
-
 ## Technology
 Compilation:
 * C++20, CMake & Make.
